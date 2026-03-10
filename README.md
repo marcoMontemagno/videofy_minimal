@@ -198,3 +198,13 @@ If you start with `make dev`, include the hotspot group there too:
 ```bash
 make dev HOTSPOT=1
 ```
+
+## Credits
+
+Videofy Minimal was built with contributions from the following people:
+- Johanna Johansson
+- Johannes Andersen
+- Edvard Høiby
+- Njål Borch
+- Anders Haarr
+- Magnus Jensen
