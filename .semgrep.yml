@@ -1,0 +1,100 @@
+rules:
+  # === Dockerfile Security ===
+  - id: dockerfile-missing-user
+    patterns:
+      - pattern: CMD $CMD
+    message: >
+      Dockerfile should specify a non-root USER before CMD to reduce
+      container privilege. Add: USER node (or another non-root user).
+    languages: [dockerfile]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-250: Execution with Unnecessary Privileges"
+
+  # === XML External Entity (XXE) in Python fetchers ===
+  - id: use-defusedxml
+    pattern: import xml.etree.ElementTree
+    message: >
+      Use defusedxml instead of xml.etree.ElementTree to prevent XXE attacks.
+      Install defusedxml and replace: import defusedxml.ElementTree as ET
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-611: XML External Entity"
+
+  - id: defusedxml-parse
+    pattern: ET.parse(...)
+    message: >
+      Use defusedxml.ElementTree.parse() instead of xml.etree.ElementTree.parse()
+      to prevent XXE attacks on untrusted XML input.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-611: XML External Entity"
+
+  # === Insecure Hash Algorithms ===
+  - id: insecure-hash-sha1
+    pattern: hashlib.sha1(...)
+    message: >
+      SHA1 is cryptographically weak. Use hashlib.sha256() instead.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-328: Use of Weak Hash"
+
+  # === Dynamic urllib Usage ===
+  - id: dynamic-urllib
+    patterns:
+      - pattern: urlopen($REQ, ...)
+    message: >
+      Dynamic URL passed to urlopen(). Validate URLs to prevent SSRF.
+      Consider using the requests library with URL allowlists.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-918: Server-Side Request Forgery"
+
+  # === TypeScript/JavaScript Security ===
+  - id: ts-eval-usage
+    pattern: eval(...)
+    message: >
+      eval() executes arbitrary code. Use safer alternatives like
+      JSON.parse() or structured data processing.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-95: Code Injection"
+
+  - id: ts-exec-usage
+    patterns:
+      - pattern: child_process.exec($CMD, ...)
+      - pattern: require("child_process").exec($CMD, ...)
+    message: >
+      child_process.exec() with string commands is vulnerable to injection.
+      Use child_process.execFile() with argument arrays instead.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+
+  - id: ts-path-traversal
+    patterns:
+      - pattern: path.join(..., $INPUT, ...)
+      - metavariable-pattern:
+          metavariable: $INPUT
+          pattern-not: "..."
+    message: >
+      Potential path traversal if user input reaches path.join().
+      Validate and sanitize path components.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-22: Path Traversal"

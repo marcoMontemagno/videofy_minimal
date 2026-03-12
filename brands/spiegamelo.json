@@ -1,0 +1,68 @@
+{
+  "brand_name": "Spiegamelo Facile",
+  "openai": {
+    "manuscriptModel": "gpt-4o",
+    "mediaModel": "gpt-4o"
+  },
+  "options": {
+    "segmentPauseSeconds": 0.3
+  },
+  "exportDefaults": {
+    "exportType": "Vertical",
+    "logo": true,
+    "audio": true,
+    "voice": true,
+    "music": true
+  },
+  "people": {
+    "default": {
+      "voice": "BZc8d1MPTdZkyGbE9Sin",
+      "model_id": "eleven_turbo_v2_5",
+      "stability": 0.5,
+      "similarity_boost": 0.8,
+      "style": 0,
+      "use_speaker_boost": true
+    }
+  },
+  "prompts": {
+    "scriptPrompt": "Sei un content creator italiano che scrive script per video brevi (30-60 secondi) destinati a Instagram Reels e YouTube Shorts. Il tuo pubblico sono freelancer e imprenditori italiani. Riceverai un contenuto nell'input utente. Segui questi passaggi:\n 1: Leggi il contenuto e comprendi il tema principale\n 2: Identifica i punti chiave: cosa c'è di nuovo, utile o sorprendente per un freelancer/imprenditore\n 3: Riassumi in modo diretto, pratico e coinvolgente. Vai dritto al contenuto, zero introduzioni generiche\n 4: Lo script deve essere in italiano e contenere massimo 3 righe. Ogni riga deve dare informazione nuova e rilevante\n 5: L'ultima riga deve offrire un consiglio pratico o una conclusione azionabile\n 6: Riscrivi ogni riga in modo che sia grammaticalmente corretta, incisiva e di massimo 12 parole. Usa parole semplici e dirette\n 7: Non includere emoji, encoding speciali o caratteri che un voice actor non può pronunciare",
+    "placementPrompt": "You are a movie director creating a short video clip from an article on a news site. The article contains videos, images and maps that can be used to create the video clip. You receive a numbered list of script lines and a numbered list of visual items (videos, maps and images) extracted from the article. Let's do this step by step: \n 1. Read the metadata for each item and place the items for each text line to best support the final video clip. Videos should be prioritized. \n 2. Always prioritize including video items if they are present in the list. \n 3. Pay attention to the item caption or description to try to match the person, place or activity mentioned in the text. \n 4. Place map items on the same line that mentions the location of the news event. \n 5. You do not have to use all the items, but you should use at least one item for each line in the script. \n 6. Do not use the same item for more than one line. \n 7. Only use the same item for multiple lines if there are fewer items than lines, or if they do not fit the story. \n 8. Remember to prioritize videos",
+    "describeImagesPrompt": "You are a helpful assistant. You are given a set of images from a news article in the user input. Describe briefly and factual what is on the image. Describe the scene, persons, mood etc. Suggest what kind of activity or event that might be happening in the image."
+  },
+  "player": {
+    "logo": "/api/brand-assets/brand_assets/spiegamelo_logo.png",
+    "logoStyle": "position: absolute; top: 90px; right: 65px;",
+    "defaultCameraMovements": [
+      "zoom-in",
+      "pan-right",
+      "zoom-in",
+      "pan-left",
+      "zoom-in",
+      "zoom-out"
+    ],
+    "colors": {
+      "text": {
+        "background": "#FF6B35",
+        "text": "#F5F0EB"
+      },
+      "progress": {
+        "active": {
+          "background": "#FF6B35",
+          "text": "#F5F0EB"
+        },
+        "inactive": {
+          "background": "#1A1A2E",
+          "text": "#F5F0EB"
+        }
+      },
+      "map": {
+        "marker": "#00C9A7"
+      },
+      "fotoCredits": {
+        "text": "#CACACA",
+        "icon": "#CACACA"
+      }
+    },
+    "backgroundMusicVolume": 1
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "spiegamelo",
+  "title": "Spiegamelo Facile",
+  "order": 20,
+  "description": "Import approved content from Spiegamelo Facile content engine.",
+  "script": "fetcher.py",
+  "fields": [
+    {
+      "name": "idea_id",
+      "label": "Idea ID",
+      "required": true,
+      "placeholder": "820"
+    },
+    {
+      "name": "project_id",
+      "label": "Project ID (optional)",
+      "required": false,
+      "placeholder": "spiegamelo-custom-project"
+    }
+  ],
+  "args": [
+    "{idea_id}"
+  ],
+  "optionalFlags": [
+    {
+      "field": "project_id",
+      "flag": "--project-id"
+    }
+  ]
+}

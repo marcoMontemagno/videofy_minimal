@@ -10,7 +10,7 @@ import re
 import shutil
 import sys
 import tempfile
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from html import unescape

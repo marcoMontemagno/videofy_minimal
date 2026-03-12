@@ -11,6 +11,7 @@ dependencies = [
   "pydantic-settings>=2.7.0,<3",
   "openai>=2.24.0,<3",
   "elevenlabs>=2.38.0,<3",
+  "defusedxml>=0.7.1,<0.8",
 ]
 
 [dependency-groups]

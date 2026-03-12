@@ -26,4 +26,7 @@ RUN npm run build -w @videofy/cms
 
 EXPOSE 3000
 
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+USER appuser
+
 CMD ["npm", "run", "start", "-w", "@videofy/cms", "--", "--hostname", "0.0.0.0", "--port", "3000"]
