@@ -27,3 +27,6 @@ coverage/
 projects/*
 !projects/.project-structure/
 !projects/.project-structure/**
+
+# Large video files
+*.mp4
