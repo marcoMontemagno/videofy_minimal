@@ -158,6 +158,9 @@ export const playerSchema = z.object({
   wipe: customCutsSchema.optional(),
   outro: customCutsSchema.optional(),
   reporterVideos: reporterVideosSchema.optional(),
+  outroSlide: z.boolean().optional(),
+  outroSlideDuration: z.number().optional(),
+  outroSlideUrl: z.string().optional(),
 });
 
 const streamSchema = z.object({

@@ -20,14 +20,160 @@ import re
 import shutil
 import sqlite3
 import sys
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 DB_PATH = "/root/youtube-to-gumroad/data/content_engine.db"
+PEXELS_API_KEY = "ClZVFW2SZjwg6LgB6GEOiIDgoanvOS4EqDQfU5tRGrr0fm4W9LnUc6Kf"
 
 
 class FetcherError(Exception):
     pass
+
+
+def fetch_pexels_images(query: str, count: int = 6, orientation: str = "portrait") -> list[dict]:
+    """Fetch images from Pexels API for video backgrounds."""
+    # Use only ASCII-safe query terms for Pexels
+    q_ascii = re.sub(r"[^a-zA-Z0-9\s]", "", query).strip()
+    if not q_ascii:
+        q_ascii = "business workspace"
+    q_encoded = quote(q_ascii[:80])
+    url = (
+        f"https://api.pexels.com/v1/search?query={q_encoded}"
+        f"&per_page={count}&orientation={orientation}&size=large"
+    )
+    req = urllib.request.Request(url, headers={
+        "Authorization": PEXELS_API_KEY,
+        "User-Agent": "VideofyMinimal/1.0",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+        photos = data.get("photos", [])
+        return [
+            {
+                "url": p["src"].get("large2x") or p["src"]["large"],
+                "width": p["width"],
+                "height": p["height"],
+                "caption": p.get("alt", query),
+                "credit": f"Photo by {p.get('photographer', 'Unknown')} on Pexels",
+            }
+            for p in photos
+        ]
+    except Exception as e:
+        print(f"[warn] Pexels search failed for '{query}': {e}", file=sys.stderr)
+        return []
+
+
+def extract_image_queries(title: str, text: str) -> list[str]:
+    """Extract search queries from content for finding relevant images."""
+    queries = []
+    # Use a generic business query based on title keywords (English for Pexels)
+    queries.append("business professional workspace")
+
+    # Extract key concepts from text (first 500 chars)
+    snippet = text[:500]
+    concept_patterns = [
+        r"(?:abbonament|subscription|tool|strument)",
+        r"(?:fattur|revenue|reddito|income|guadagn)",
+        r"(?:freelanc|imprendit|business|lavoro)",
+        r"(?:cost|spesa|prezzo|budget)",
+        r"(?:tecnolog|digital|computer|software)",
+    ]
+    for pattern in concept_patterns:
+        if re.search(pattern, snippet, re.IGNORECASE):
+            # Map Italian concepts to English search terms (Pexels works better in English)
+            concept_map = {
+                "abbonament": "subscription services laptop",
+                "subscription": "subscription services laptop",
+                "tool": "digital tools workspace",
+                "strument": "digital tools workspace",
+                "fattur": "business finance calculator",
+                "revenue": "business revenue growth",
+                "reddito": "income money calculator",
+                "income": "income money calculator",
+                "guadagn": "earnings profit business",
+                "freelanc": "freelancer working laptop",
+                "imprendit": "entrepreneur startup office",
+                "business": "business professional",
+                "lavoro": "working professional desk",
+                "cost": "costs expenses budget",
+                "spesa": "expenses budget planning",
+                "prezzo": "pricing money",
+                "budget": "budget planning calculator",
+                "tecnolog": "technology modern workspace",
+                "digital": "digital technology screen",
+                "computer": "computer workspace modern",
+                "software": "software developer screen",
+            }
+            for key, search_term in concept_map.items():
+                if re.search(key, snippet, re.IGNORECASE):
+                    queries.append(search_term)
+                    break
+
+    # Deduplicate and limit
+    seen = set()
+    unique = []
+    for q in queries:
+        if q.lower() not in seen:
+            seen.add(q.lower())
+            unique.append(q)
+    return unique[:4]
+
+
+def _split_post_into_script_lines(text: str) -> list[str]:
+    """Split a LinkedIn post into natural spoken segments for video voiceover.
+
+    Groups short paragraphs together so each segment is roughly 4-6 seconds
+    of speech (~20-30 words). Target: 8-12 segments for a 30-60s video.
+    """
+    # Split by double newline (paragraph breaks) and clean
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+
+    # Remove separators, PS lines, and very short noise
+    paragraphs = [
+        p for p in paragraphs
+        if p not in ("---", "—", "***", "___")
+        and not p.startswith("PS:")
+        and not p.startswith("PS ")
+        and len(p) > 3
+    ]
+
+    # Group paragraphs into segments of ~20-30 words
+    segments: list[str] = []
+    current_segment: list[str] = []
+    current_word_count = 0
+
+    for para in paragraphs:
+        # Clean internal line breaks
+        para_clean = re.sub(r"\s+", " ", para).strip()
+        para_words = len(para_clean.split())
+
+        # If this paragraph alone is very long, it's its own segment
+        if para_words >= 25:
+            if current_segment:
+                segments.append(" ".join(current_segment))
+                current_segment = []
+                current_word_count = 0
+            segments.append(para_clean)
+        else:
+            current_segment.append(para_clean)
+            current_word_count += para_words
+            if current_word_count >= 20:
+                segments.append(" ".join(current_segment))
+                current_segment = []
+                current_word_count = 0
+
+    # Flush remaining
+    if current_segment:
+        segments.append(" ".join(current_segment))
+
+    # Filter out empty segments
+    segments = [s for s in segments if s and len(s.split()) >= 3]
+
+    return segments
 
 
 def utc_now_iso() -> str:
@@ -103,24 +249,50 @@ def fetch_idea(idea_id: str) -> dict[str, object]:
         raise FetcherError(f"Idea {idea_id} not found in database")
 
     # Get publication content if available
+    # Prefer X/Twitter content (shorter, better for Reels), fall back to LinkedIn
     cursor.execute(
         """
         SELECT content, platform
         FROM publications
-        WHERE idea_id = ?
-        ORDER BY created_at DESC
+        WHERE idea_id = ? AND platform = 'x' AND content IS NOT NULL AND content != ''
         LIMIT 1
         """,
         (idea_id,),
     )
     pub_row = cursor.fetchone()
+    if not pub_row:
+        # Fall back to LinkedIn if no X content
+        cursor.execute(
+            """
+            SELECT content, platform
+            FROM publications
+            WHERE idea_id = ? AND platform = 'linkedin' AND content IS NOT NULL AND content != ''
+            LIMIT 1
+            """,
+            (idea_id,),
+        )
+        pub_row = cursor.fetchone()
+    if not pub_row:
+        # Last resort: longest content from any platform
+        cursor.execute(
+            """
+            SELECT content, platform
+            FROM publications
+            WHERE idea_id = ? AND content IS NOT NULL AND content != ''
+            ORDER BY LENGTH(content) DESC
+            LIMIT 1
+            """,
+            (idea_id,),
+        )
+        pub_row = cursor.fetchone()
     conn.close()
 
     title = row["title_it"] or row["title"] or "Untitled"
-    body = row["extracted_content"] or row["description"] or ""
+    # Prefer Italian publication content over English extracted_content
     summary = ""
     if pub_row:
         summary = pub_row["content"] or ""
+    body = summary or row["extracted_content"] or row["description"] or ""
 
     score_factors = {}
     if row["score_factors"]:
@@ -129,13 +301,38 @@ def fetch_idea(idea_id: str) -> dict[str, object]:
         except json.JSONDecodeError:
             pass
 
+    # Split post first to know how many images we need
+    script_lines_preview = _split_post_into_script_lines(body) if body else []
+    needed_images = max(len(script_lines_preview), 6)
+
+    # Fetch background images from Pexels
+    image_queries = extract_image_queries(title, body or summary or title)
+    all_images = []
+    for query in image_queries:
+        imgs = fetch_pexels_images(query, count=5, orientation="portrait")
+        all_images.extend(imgs)
+    # Deduplicate by URL and limit to needed count
+    seen_urls: set[str] = set()
+    unique_images = []
+    for img in all_images:
+        if img["url"] not in seen_urls:
+            seen_urls.add(img["url"])
+            unique_images.append(img)
+        if len(unique_images) >= needed_images:
+            break
+
+    # Split the Italian post into script lines for direct voiceover
+    # Group short paragraphs into natural spoken segments (5-8s each)
+    script_lines = _split_post_into_script_lines(body) if body else None
+
     return {
         "title": title,
         "byline": "Spiegamelo Facile",
         "pubdate": utc_now_iso(),
         "text": body if body else title,
         "summary": summary,
-        "images": [],
+        "script_lines": script_lines,
+        "images": unique_images,
         "videos": [],
         "metadata": {
             "idea_id": row["id"],
@@ -162,15 +359,35 @@ def import_idea(
 
     create_project_layout(project_dir, force=force)
 
+    # Download images to input/images/
+    downloaded_images = []
+    images_dir = project_dir / "input" / "images"
+    for i, img in enumerate(idea_data["images"]):
+        img_filename = f"pexels_{i + 1}.jpg"
+        img_path = images_dir / img_filename
+        try:
+            req = urllib.request.Request(img["url"], headers={"User-Agent": "VideofyMinimal/1.0"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                img_path.write_bytes(resp.read())
+            downloaded_images.append({
+                "path": f"input/images/{img_filename}",
+                "byline": img.get("credit", "Pexels"),
+            })
+            print(f"  Downloaded image {i + 1}: {img_filename}")
+        except Exception as e:
+            print(f"  [warn] Failed to download image {i + 1}: {e}", file=sys.stderr)
+
     # article.json follows the Videofy contract
-    article_payload = {
+    article_payload: dict[str, object] = {
         "title": idea_data["title"],
         "byline": idea_data["byline"],
         "pubdate": idea_data["pubdate"],
         "text": idea_data["text"],
-        "images": idea_data["images"],
+        "images": downloaded_images,
         "videos": idea_data["videos"],
     }
+    if idea_data.get("script_lines"):
+        article_payload["script_lines"] = idea_data["script_lines"]
 
     (project_dir / "generation.json").write_text(
         json.dumps(build_generation_manifest(canonical_project_id), indent=2, ensure_ascii=False)

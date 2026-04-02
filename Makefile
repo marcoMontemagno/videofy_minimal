@@ -46,7 +46,7 @@ install:
 	npm install
 
 dev-api: sync
-	uv run uvicorn api.main:app --reload --host 0.0.0.0 --port 8001
+	uv run uvicorn api.main:app --reload --host 127.0.0.1 --port 8001
 
 dev-cms: install
 	npm run dev:cms
@@ -60,7 +60,7 @@ dev: sync install
 		echo "Run 'make stop-dev' to clear stale local dev processes."; \
 		exit 1; \
 	else \
-		uv run uvicorn api.main:app --reload --host 0.0.0.0 --port 8001 & \
+		uv run uvicorn api.main:app --reload --host 127.0.0.1 --port 8001 & \
 		api_pid=$$!; \
 	fi; \
 	if lsof -ti tcp:3000 -sTCP:LISTEN >/dev/null 2>&1; then \

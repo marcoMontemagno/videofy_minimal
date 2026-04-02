@@ -13,6 +13,7 @@ import { BackgroundMusic } from "./Sequence/Assets/BackgroundMusic";
 import { Intro } from "./Sequence/Assets/Intro";
 import { Logo } from "./Sequence/Assets/Logo";
 import { Outro } from "./Sequence/Assets/Outro";
+import { OutroSlide } from "./Sequence/Assets/OutroSlide";
 import { ReporterVideo } from "./Sequence/Assets/ReporterVideo";
 import { Wipe } from "./Sequence/Assets/Wipe";
 import { ExternalDisplayArticle } from "./Sequence/ExternalDisplayArticle";
@@ -237,6 +238,27 @@ function buildSeriesSequences(
         offset={roundToNearestFrame(expandedPlayerConfig.outro.offset)}
       >
         <Outro asset={expandedPlayerConfig.outro} outroDuration={outroDuration} />
+      </Series.Sequence>
+    );
+  }
+
+  // Branded outro slide with logo + URL (always shown for Spiegamelo)
+  if (expandedPlayerConfig.logo && expandedPlayerConfig.outroSlide !== false) {
+    const outroSlideDuration = roundToNearestFrame(
+      expandedPlayerConfig.outroSlideDuration ?? 3
+    );
+    sequenceItems.push(
+      <Series.Sequence
+        key="outro-slide-sequence"
+        durationInFrames={outroSlideDuration}
+      >
+        <OutroSlide
+          logo={expandedPlayerConfig.logo}
+          url={expandedPlayerConfig.outroSlideUrl}
+          backgroundColor={expandedPlayerConfig.colors?.text?.text}
+          textColor={expandedPlayerConfig.colors?.text?.background}
+          durationInFrames={outroSlideDuration}
+        />
       </Series.Sequence>
     );
   }

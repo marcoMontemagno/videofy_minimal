@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@remotion/animation-utils": "^4.0.433",
+    "@remotion/cli": "^4.0.441",
     "@remotion/google-fonts": "^4.0.433",
     "@remotion/player": "^4.0.433",
     "react": "^19.2.4",

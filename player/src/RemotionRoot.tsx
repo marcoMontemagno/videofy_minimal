@@ -9,6 +9,7 @@ import {
   defaultPlayerConfig,
 } from "./types/constants";
 import { getFullDuration } from "./utils/timestamps";
+import { RecapVideo } from "./RecapVideo";
 
 export const RemotionRoot: FC = () => {
   const manuscripts = placeholderData;
@@ -16,30 +17,40 @@ export const RemotionRoot: FC = () => {
   const initialTotalDuration = 0;
 
   return (
-    <Composition
-      id="ArticlesSeries"
-      component={ArticlesSeries}
-      durationInFrames={initialTotalDuration}
-      fps={VIDEO_FPS}
-      width={VIDEO_WIDTH}
-      height={VIDEO_HEIGHT}
-      defaultProps={{ manuscripts }}
-      calculateMetadata={async ({ props }: { props: ArticleSeriesProps }) => {
-        const { manuscripts, playerConfig = defaultPlayerConfig } = props;
+    <>
+      <Composition
+        id="ArticlesSeries"
+        component={ArticlesSeries}
+        durationInFrames={initialTotalDuration}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+        defaultProps={{ manuscripts }}
+        calculateMetadata={async ({ props }: { props: ArticleSeriesProps }) => {
+          const { manuscripts, playerConfig = defaultPlayerConfig } = props;
 
-        const totalDuration = getFullDuration({
-          manuscripts,
-          playerConfig,
-        });
+          const totalDuration = getFullDuration({
+            manuscripts,
+            playerConfig,
+          });
 
-        return {
-          playerConfig,
-          durationInFrames: totalDuration,
-          width: props.width,
-          height: props.height,
-          ...props,
-        };
-      }}
-    />
+          return {
+            playerConfig,
+            durationInFrames: totalDuration,
+            width: props.width,
+            height: props.height,
+            ...props,
+          };
+        }}
+      />
+      <Composition
+        id="RecapVideo"
+        component={RecapVideo}
+        durationInFrames={3600}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+    </>
   );
 };
